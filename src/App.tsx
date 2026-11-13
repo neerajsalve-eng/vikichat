@@ -19,30 +19,22 @@ const App: FC = () => {
       setCurrentUser(user);
       if (!user) return;
       const reference = doc(db, "users", user.uid);
-      void getDoc(reference)
-        .then((snapshot) =>
-          setDoc(
-            reference,
-            {
-              uid: user.uid,
-              email: user.email,
-              displayName: user.displayName,
-              photoURL: user.photoURL,
-              phoneNumber:
-                user.phoneNumber || user.providerData[0]?.phoneNumber || null,
-              ...(!snapshot.data()?.createdAt
-                ? { createdAt: serverTimestamp() }
-                : {}),
-            },
-            { merge: true },
-          ),
-        )
-        .catch(() =>
-          toast.error(
-            "Could not update your profile. Please try signing in again.",
-          ),
-        );
-    });
+void getDoc(reference)
+      .then((snapshot) => {
+        if (snapshot.exists()) return;
+        return setDoc(reference, {
+          uid: user.uid,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          createdAt: serverTimestamp(),
+        });
+      })
+      .catch(() =>
+        toast.error(
+          "Could not update your profile. Please try signing in again.",
+        ),
+      );
+  });
   }, []);
 
   // Re-run the route guards whenever the signed-in user changes

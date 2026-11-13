@@ -33,6 +33,12 @@ const ChatView: FC<ChatViewProps> = ({ conversation, setReplyInfo }) => {
   const conversationId = useConversationId()!;
   const uid = useStore((state) => state.currentUser?.uid);
   const [limitCount, setLimitCount] = useState(20);
+   const clearedAtMs: number =
+    (
+      conversation as ConversationInfo & {
+        clearedAt?: Record<string, { seconds: number }>;
+      }
+    ).clearedAt?.[uid as string]?.seconds || 0;
   const { data, loading, error, retry } = useCollectionQuery(
     `messages-${conversationId}-${limitCount}`,
     query(
@@ -48,8 +54,16 @@ const ChatView: FC<ChatViewProps> = ({ conversation, setReplyInfo }) => {
   const atBottom = useRef(true);
   const lastId = useRef<string | undefined>(undefined);
   const messages = useMemo(
-    () => data?.docs.map((item) => ({ ...item.data(), id: item.id })) || [],
-    [data],
+    () =>
+    data?.docs
+      .map((item) => ({ ...item.data(), id: item.id }))
+      .filter(
+        (m) =>
+          !clearedAtMs ||
+          ((m as { createdAt?: { seconds: number } }).createdAt?.seconds || 0) >
+            clearedAtMs,
+      ) || [],
+    [data, clearedAtMs],
   );
   const newestId = messages.at(-1)?.id;
   const seen = new Map<string, string[]>();

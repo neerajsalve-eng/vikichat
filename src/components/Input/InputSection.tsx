@@ -81,6 +81,7 @@ const InputSection: FC<InputSectionProps> = ({
   const updateTimestamp = () => {
     updateDoc(doc(db, "conversations", conversationId as string), {
       updatedAt: serverTimestamp(),
+      hiddenFor: [],
     }).catch(() =>
       toast.error("Could not update the conversation. Please try again."),
     );

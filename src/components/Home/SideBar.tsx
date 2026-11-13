@@ -52,7 +52,7 @@ const SideBar: FC = () => {
               src="/icon.svg"
               alt=""
             />
-            <h1 className="text-xl">FireVerse</h1>
+            <h1 className="text-xl">Rhinox</h1>
           </Link>
 
           <div className="flex items-center gap-1">
@@ -138,7 +138,7 @@ const SideBar: FC = () => {
           </div>
         ) : (
           <div>
-            {data?.docs.map((item) => (
+            {data?.docs.filter((d) => !((d.data() as ConversationInfo & { hiddenFor?: string[] }).hiddenFor || []).includes(currentUser?.uid as string)).map((item) => (
               <SelectConversation
                 key={item.id}
                 conversation={item.data() as ConversationInfo}

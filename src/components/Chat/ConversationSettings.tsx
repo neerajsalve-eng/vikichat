@@ -1,6 +1,6 @@
 import Modal from "../Modal";
 import { ChangeEvent, FC, FormEvent, useRef, useState } from "react";
-import { arrayRemove, doc, updateDoc } from "firebase/firestore";
+import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
 import { db } from "../../shared/firebase";
 import configs, { UPLOADS_DISABLED_MESSAGE } from "../../shared/configs";
 import { uploadToStorage } from "../../shared/upload";
@@ -38,6 +38,7 @@ const ConversationSettings: FC<ConversationConfigProps> = ({
   const [isChangeThemeOpened, setIsChangeThemeOpened] = useState(false);
 
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFormSubmit = (e: FormEvent) => {
@@ -114,7 +115,19 @@ const ConversationSettings: FC<ConversationConfigProps> = ({
     }
   };
 
+  const deleteChat = async () => {
+    try {
+      await updateDoc(doc(db, "conversations", conversationId as string), {
+        hiddenFor: arrayUnion(currentUser?.uid as string),
+        [`clearedAt.${currentUser?.uid}`]: new Date(),
+      });
+      await navigate({ to: "/" });
+    } catch {
+      toast.error("Unable to delete the chat. Please try again.");
+    }
+  };
   return (
+    
     <Modal title="Conversation settings" onClose={() => setIsOpened(false)}>
       <div className="flex flex-col items-stretch p-3">
         {conversation.users.length > 2 && (
@@ -215,6 +228,13 @@ const ConversationSettings: FC<ConversationConfigProps> = ({
           <i className="bx bxs-file text-2xl"></i>
           <span>View images & files</span>
         </button>
+        <button
+  onClick={() => setConfirmDelete(true)}
+  className="flex items-center gap-3 rounded-lg bg-dark px-3 py-2 text-red-400 transition duration-300 hover:brightness-125"
+>
+  <i className="bx bx-trash text-2xl"></i>
+  <span>Delete chat</span>
+</button>
 
         {conversation.users.length > 2 && (
           <button
@@ -228,6 +248,15 @@ const ConversationSettings: FC<ConversationConfigProps> = ({
           </button>
         )}
       </div>
+      {confirmDelete && (
+  <ConfirmDialog
+    title="Delete chat?"
+    message="This chat will be removed from your list. The other person will still see it."
+    confirmText="Delete"
+    onClose={() => setConfirmDelete(false)}
+    onConfirm={deleteChat}
+  />
+)}
       {confirmLeave && (
         <ConfirmDialog
           title="Leave group?"
